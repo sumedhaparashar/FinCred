@@ -10,10 +10,15 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   displayName: text("display_name"),
   photoURL: text("photo_url"),
-  finCredScore: integer("fin_cred_score").default(0),
+  finCredScore: integer("fin_cred_score").default(300),
   level: integer("level").default(1),
   xp: integer("xp").default(0),
   streak: integer("streak").default(0),
+  budgetAdherence: integer("budget_adherence").default(0),
+  challengeCompletion: integer("challenge_completion").default(0),
+  consistency: integer("consistency").default(0),
+  savingsRate: integer("savings_rate").default(0),
+  lastActivity: timestamp("last_activity").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -70,6 +75,64 @@ export const userTasks = pgTable("user_tasks", {
   completedAt: timestamp("completed_at"),
 });
 
+// Budget Categories
+export const budgetCategories = pgTable("budget_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  icon: text("icon").notNull(),
+  color: text("color").notNull(),
+  isDefault: boolean("is_default").default(false),
+});
+
+// User Budget Categories (many-to-many)
+export const userBudgetCategories = pgTable("user_budget_categories", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  categoryId: integer("category_id").references(() => budgetCategories.id),
+  monthlyBudget: integer("monthly_budget").default(0),
+  currentSpending: integer("current_spending").default(0),
+  month: integer("month").notNull(),
+  year: integer("year").notNull(),
+});
+
+// Bank Accounts
+export const bankAccounts = pgTable("bank_accounts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  accountName: text("account_name").notNull(),
+  accountType: text("account_type").notNull(), // 'checking', 'savings', 'credit'
+  balance: integer("balance").default(0),
+  masked_number: text("masked_number"), // Last 4 digits only
+  isConnected: boolean("is_connected").default(false),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+});
+
+// User Agreements
+export const userAgreements = pgTable("user_agreements", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  agreementType: text("agreement_type").notNull(), // 'terms', 'privacy', 'bank_sync'
+  signedAt: timestamp("signed_at").defaultNow(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  isActive: boolean("is_active").default(true),
+});
+
+// PvP Duels
+export const pvpDuels = pgTable("pvp_duels", {
+  id: serial("id").primaryKey(),
+  challengerId: integer("challenger_id").references(() => users.id),
+  challengedId: integer("challenged_id").references(() => users.id),
+  challengeType: text("challenge_type").notNull(), // 'savings', 'spending', 'streak'
+  startDate: timestamp("start_date").defaultNow(),
+  endDate: timestamp("end_date"),
+  challengerScore: integer("challenger_score").default(0),
+  challengedScore: integer("challenged_score").default(0),
+  winnerId: integer("winner_id").references(() => users.id),
+  xpRewarded: integer("xp_rewarded").default(0),
+  status: text("status").default("pending"), // 'pending', 'active', 'completed'
+});
+
 // Create insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -108,6 +171,31 @@ export const insertUserTaskSchema = createInsertSchema(userTasks).omit({
   completedAt: true,
 });
 
+export const insertBudgetCategorySchema = createInsertSchema(budgetCategories).omit({
+  id: true,
+});
+
+export const insertUserBudgetCategorySchema = createInsertSchema(userBudgetCategories).omit({
+  id: true,
+});
+
+export const insertBankAccountSchema = createInsertSchema(bankAccounts).omit({
+  id: true,
+  lastUpdated: true,
+});
+
+export const insertUserAgreementSchema = createInsertSchema(userAgreements).omit({
+  id: true,
+  signedAt: true,
+});
+
+export const insertPvpDuelSchema = createInsertSchema(pvpDuels).omit({
+  id: true,
+  startDate: true,
+  winnerId: true,
+  xpRewarded: true,
+});
+
 // Type definitions
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -129,3 +217,18 @@ export type InsertTask = z.infer<typeof insertTaskSchema>;
 
 export type UserTask = typeof userTasks.$inferSelect;
 export type InsertUserTask = z.infer<typeof insertUserTaskSchema>;
+
+export type BudgetCategory = typeof budgetCategories.$inferSelect;
+export type InsertBudgetCategory = z.infer<typeof insertBudgetCategorySchema>;
+
+export type UserBudgetCategory = typeof userBudgetCategories.$inferSelect;
+export type InsertUserBudgetCategory = z.infer<typeof insertUserBudgetCategorySchema>;
+
+export type BankAccount = typeof bankAccounts.$inferSelect;
+export type InsertBankAccount = z.infer<typeof insertBankAccountSchema>;
+
+export type UserAgreement = typeof userAgreements.$inferSelect;
+export type InsertUserAgreement = z.infer<typeof insertUserAgreementSchema>;
+
+export type PvpDuel = typeof pvpDuels.$inferSelect;
+export type InsertPvpDuel = z.infer<typeof insertPvpDuelSchema>;

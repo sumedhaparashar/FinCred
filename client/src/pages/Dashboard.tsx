@@ -11,6 +11,7 @@ import BadgesList from "@/components/dashboard/BadgesList";
 import BudgetMastery from "@/components/dashboard/BudgetMastery";
 import BankSync from "@/components/dashboard/BankSync";
 import EnhancedLeaderboard from "@/components/dashboard/EnhancedLeaderboard";
+import ExpenseTracker from "@/components/dashboard/ExpenseTracker";
 import { calculateXPProgress } from "@/lib/xpEngine";
 
 export default function Dashboard() {
@@ -94,8 +95,9 @@ export default function Dashboard() {
           {/* Budget Tab Content */}
           <TabsContent value="budget" className="mt-6">
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-2 space-y-6">
                 <BudgetMastery />
+                <ExpenseTracker />
               </div>
               <div>
                 <XPProgress />
